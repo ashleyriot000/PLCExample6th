@@ -47,7 +47,4 @@ public class SignController : MonoBehaviour
             TurnOn(isOn);
         }
     }
-
-   
-
 }

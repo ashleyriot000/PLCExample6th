@@ -2,7 +2,8 @@ using UnityEngine;
 
 public class Filler : MonoBehaviour
 {
-    public GameObject prefab;
+    public GameObject[] prefabs;
+    public string prefabName;
     public float startTime = 1f;
     public float delay = 3f;
 
@@ -19,7 +20,8 @@ public class Filler : MonoBehaviour
     {
         if(isFilled == false && fillTime < Time.time)
         {
-            Instantiate<GameObject>(prefab, transform.position, transform.rotation);
+            GameObject go = Instantiate<GameObject>(prefabs[Random.Range(0, prefabs.Length)], transform.position, transform.rotation);
+            go.name = prefabName;
             isFilled = true;
         }
     }
@@ -29,7 +31,7 @@ public class Filler : MonoBehaviour
         if (other.attachedRigidbody.isKinematic == true)
             return;
 
-        if (!other.gameObject.name.Contains(prefab.name))
+        if (!other.gameObject.name.Contains(prefabName))
             return;
 
         isFilled = true;
@@ -37,7 +39,7 @@ public class Filler : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        if (!other.gameObject.name.Contains(prefab.name))
+        if (!other.gameObject.name.Contains(prefabName))
             return;
 
         isFilled = false;

@@ -246,7 +246,7 @@ public class ServoAmp : MonoBehaviour
 
         //시작 위치를 계산
         float startPos = (ampType == AmpType.Linear) ?
-            -transform.localPosition.z * 1000f : transform.localRotation.eulerAngles.x;
+            transform.localPosition.z * 1000f : transform.localRotation.eulerAngles.x;
 
         //물리적인 위치 알아내기.
         currentPulse = PhysToPulse(startPos);
@@ -295,6 +295,7 @@ public class ServoAmp : MonoBehaviour
             }
 
             //조인트에 목표 위치값을 적용.
+            Debug.Log(new Vector3(mmValue / 1000f, 0, 0));
             slider.targetPosition = new Vector3(mmValue / 1000f, 0, 0);
         }
         //작동방식이 회전 타입일 경우
@@ -384,12 +385,13 @@ public class ServoAmp : MonoBehaviour
         {
             //시작 위치를 계산
             float startPos = (ampType == AmpType.Linear) ?
-                -transform.localPosition.z * 1000f : transform.localRotation.eulerAngles.x;
+                transform.localPosition.z * 1000f : transform.localRotation.eulerAngles.x;
 
             //물리적인 위치 알아내기.
             currentPulse = PhysToPulse(startPos);
             internalTarget_Unit = PulseToUnit(currentPulse);
             homeOffset_Unit = internalTarget_Unit;
+            Debug.Log(internalTarget_Unit);
 
             ApplyPhysics(internalTarget_Unit);
         }
@@ -467,7 +469,6 @@ public class ServoAmp : MonoBehaviour
             IsError = true;
             return;
         }
-        Debug.Log("Start Opr");
         cmd_StartOPR = true;
     }
 

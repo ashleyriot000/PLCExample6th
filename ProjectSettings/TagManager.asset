@@ -6,6 +6,9 @@ TagManager:
   tags:
   - Normal
   - Broken
+  - Red
+  - Blue
+  - Green
   layers:
   - Default
   - TransparentFX
@@ -38,7 +41,7 @@ TagManager:
   - 
   - 
   - 
-  - 
+  - Outline
   m_SortingLayers:
   - name: Default
     uniqueID: 0

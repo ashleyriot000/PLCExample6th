@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Unity.VisualScripting;
 using UnityEditor.Overlays;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -75,6 +76,8 @@ public class PositioningManager : MonoBehaviour
         {
             positionList[i].GetUIData.ChangeIndex(i + 1);
         }
+
+        SaveData();
     }
 
 
@@ -93,12 +96,46 @@ public class PositioningManager : MonoBehaviour
         }
 
         //해당 파일 경로로 저장하기
-        File.WriteAllLines(path, csvDatas);
-        
+        File.WriteAllLines(path, csvDatas);        
     }
 
     private void LoadData()
     {
+        string path = Path.Combine(Application.dataPath, "PositionData.csv");
+        if(!File.Exists(path))
+        {
+            Debug.LogError("파일이 존재하지 않아 불러올 수 없습니다.");
+            return;
+        }
 
+        string[] csvDatas = File.ReadAllLines(path);
+        if(csvDatas.Length > 1)
+        {
+            //기존 데이터에 연결된 UI데이터들을 삭제함.
+            foreach(var position in positionList)
+            {
+                position.GetUIData.Delete(false);
+            }
+
+            //기존 데이터 완전 삭제.
+            positionList.Clear();
+
+            //파일 기준으로 데이터를 재구성
+            for (int i = 1; i < csvDatas.Length; ++i)
+            {
+                //','를 기준으로 문자열을 잘라내서 분류해야 함.
+                string[] datas = csvDatas[i].Split(',');
+                AddData(int.Parse(datas[1]), int.Parse(datas[2]), int.Parse(datas[3]));
+            }
+        }
+        else
+        {
+            Debug.LogWarning("파일 안에 데이터가 들어있지 않아 불러오기를 취소합니다.");
+        }
+    }
+
+    private void Start()
+    {
+        LoadData();
     }
 }

@@ -295,7 +295,6 @@ public class ServoAmp : MonoBehaviour
             }
 
             //조인트에 목표 위치값을 적용.
-            Debug.Log(new Vector3(mmValue / 1000f, 0, 0));
             slider.targetPosition = new Vector3(mmValue / 1000f, 0, 0);
         }
         //작동방식이 회전 타입일 경우

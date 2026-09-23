@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 public class CameraMovement : MonoBehaviour
@@ -96,6 +97,8 @@ public class CameraMovement : MonoBehaviour
     public void OnMove(InputValue value)
     {
         moveInput = value.Get<Vector2>();
+        if (moveInput.sqrMagnitude > 0.01f)
+            StopFocus();
     }
     public void OnLook(InputValue value)
     {
@@ -107,7 +110,8 @@ public class CameraMovement : MonoBehaviour
     }
     public void OnFreelook(InputValue value)
     {
-        isRightPressed = value.isPressed;
+        if(isRightPressed = value.isPressed)
+            StopFocus();
     }       
     public void OnPan(InputValue value)
     {
@@ -116,6 +120,36 @@ public class CameraMovement : MonoBehaviour
     public void OnZoom(InputValue value)
     {
         zoomInput = value.Get<float>();
+    }
+
+    public void OnFocus()
+    {
+        //마우스 커서가 UI 오브젝트 위에 있는 상황에서는 무시한다
+        //if (EventSystem.current.IsPointerOverGameObject())
+        //    return;
+
+        Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+        if(Physics.Raycast(ray, out RaycastHit hit))
+        {
+            focusingTarget = hit.transform;
+            isFocusing = true;
+
+            //포커싱 하는 순간 포커스된 오브젝트를 정면으로 쳐다보게끔 하는 코드.
+            Vector3 direction = focusingTarget.position - transform.position;
+            targetRotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+            focusDistance = Mathf.Clamp(direction.magnitude, minFocusDistance, maxFocusDistance);
+            targetPosition = focusingTarget.position - (targetRotation * Vector3.forward * focusDistance);
+        }
+    }
+
+    public void StopFocus()
+    {
+        if (isFocusing == false)
+            return;
+
+        isFocusing = false;
+        targetPosition = transform.position;
+        focusingTarget = null;
     }
 
     private void FixedUpdate()

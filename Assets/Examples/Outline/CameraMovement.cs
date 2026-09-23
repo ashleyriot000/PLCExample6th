@@ -18,6 +18,7 @@ public class CameraMovement : MonoBehaviour
     public float moveSpeed = 10f;       //카메라의 이동 속도
     public float mouseSensitivity = 0.1f;   //마우스 감도
     public float panSpeed = 0.05f;      //패닝 속도
+    public float lerpSpeed = 0.1f;      //선형 보간 수치
 
     [Header("Focus Settings")]
     public float focusDistance = 1.5f;      //현재 포커스 거리
@@ -89,7 +90,7 @@ public class CameraMovement : MonoBehaviour
             if(isMiddlePressed && lookInput.sqrMagnitude > 0.01f)
             {
                 Vector3 pan = (transform.up * -lookInput.y + transform.right * -lookInput.x) * panSpeed;
-                targetPosition -= pan;
+                targetPosition += pan;
             }
         }
     }
@@ -152,13 +153,21 @@ public class CameraMovement : MonoBehaviour
         focusingTarget = null;
     }
 
+    private void LerpUpdate(float delta)
+    {
+        //선형 보간(Lerp)을 이용해서 부드러운 이동 및 회전을 하도록 추가.
+        Vector3 position = Vector3.Lerp(transform.position, targetPosition, delta * lerpSpeed);
+        Quaternion rotation = Quaternion.Slerp(transform.rotation, targetRotation, delta* lerpSpeed);
+        transform.SetPositionAndRotation(position, rotation);
+    }
+
     private void FixedUpdate()
     {
         if (uType != UpdateType.FixedUpdate)
             return;
 
         HandleCalculation(Time.fixedDeltaTime);
-        transform.SetPositionAndRotation(targetPosition, targetRotation);
+        LerpUpdate(Time.fixedDeltaTime);
     }
 
     private void Update()
@@ -167,7 +176,7 @@ public class CameraMovement : MonoBehaviour
             return;
 
         HandleCalculation(Time.deltaTime);
-        transform.SetPositionAndRotation(targetPosition, targetRotation);
+        LerpUpdate(Time.deltaTime);
     }
 
     private void LateUpdate()
@@ -176,6 +185,14 @@ public class CameraMovement : MonoBehaviour
             return;
 
         HandleCalculation(Time.deltaTime);
-        transform.SetPositionAndRotation(targetPosition, targetRotation);
+        LerpUpdate(Time.deltaTime);
+    }
+
+    public void MoveToDestination(Transform destination)
+    {
+        StopFocus();
+
+        targetPosition = destination.position;
+        targetRotation = destination.rotation;
     }
 }

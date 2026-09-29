@@ -578,7 +578,7 @@ MonoBehaviour:
     label: 
     address: Y17
     description: 
-    comment: 
+    comment: "\uB178\uB791\uB7A8\uD504\n\n\n"
   onChangedValue:
     m_PersistentCalls:
       m_Calls:
@@ -1288,7 +1288,7 @@ MonoBehaviour:
     label: 
     address: X07
     description: 
-    comment: 
+    comment: "\uC2DC\uC791\uBC84\uD2BC\n\n\n"
   needCallback: 0
 --- !u!1 &577464263
 GameObject:
@@ -1516,7 +1516,7 @@ MonoBehaviour:
     label: 
     address: Y16
     description: 
-    comment: 
+    comment: "\uB179\uC0C9\uB7A8\uD504\n\n\n"
   onChangedValue:
     m_PersistentCalls:
       m_Calls:
@@ -2888,7 +2888,7 @@ MonoBehaviour:
     label: 
     address: X08
     description: 
-    comment: 
+    comment: "\uC815\uC9C0\uBC84\uD2BC\n\n\n"
   needCallback: 0
 --- !u!1 &1520009193
 GameObject:
@@ -3558,7 +3558,7 @@ MonoBehaviour:
     label: 
     address: Y18
     description: 
-    comment: 
+    comment: "\uBE68\uAC15\uB7A8\uD504\n\n\n"
   onChangedValue:
     m_PersistentCalls:
       m_Calls:

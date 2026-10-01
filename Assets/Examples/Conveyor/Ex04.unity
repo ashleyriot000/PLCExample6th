@@ -5504,8 +5504,8 @@ MonoBehaviour:
     isLocked: 1
     label: 
     address: X0F
-    description: "\uCEE8\uBCA0\uC774\uC5B43 \uD558\uD55C \uC13C\uC11C"
-    comment: "\uCEE8\uBCA03\n\uD558\uD55C\uC13C\uC11C\n\n"
+    description: "\uCEE8\uBCA0\uC774\uC5B42 \uC13C\uC11C"
+    comment: "\uCEE8\uBCA02\n\uC13C\uC11C\n\n"
   needCallback: 0
 --- !u!120 &1022726118
 LineRenderer:
@@ -6294,7 +6294,7 @@ MonoBehaviour:
     isLocked: 1
     label: 
     address: X0E
-    description: "\uCEE8\uBCA0\uC774\uC5B41 \uC0C1\uD55C \uC13C\uC11C"
+    description: "\uCEE8\uBCA0\uC774\uC5B43 \uD558\uD55C \uC13C\uC11C"
     comment: "\uCEE8\uBCA01\n\uC0C1\uD55C\uC13C\uC11C\n\n"
   needCallback: 0
 --- !u!120 &1051307486
@@ -7114,7 +7114,7 @@ MonoBehaviour:
     isLocked: 1
     label: 
     address: X02
-    description: "\uCEE8\uBCA0\uC774\uC5B41 \uD558\uD55C \uC13C\uC11C"
+    description: "\uCEE8\uBCA0\uC774\uC5B43 \uD558\uD55C \uC13C\uC11C"
     comment: "\uCEE8\uBCA01\n\uD558\uD55C\uC13C\uC11C\n\n"
   needCallback: 0
 --- !u!1001 &1135792593
@@ -8562,7 +8562,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d8418f7843fdefd4895e852605f75f25, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.1493
+      value: 0.149
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: d8418f7843fdefd4895e852605f75f25, type: 3}
       propertyPath: m_LocalRotation.w
@@ -9464,7 +9464,7 @@ MonoBehaviour:
     isLocked: 1
     label: 
     address: X05
-    description: "\uCEE8\uBCA0\uC774\uC5B44 \uC0C1\uD55C \uC13C\uC11C"
+    description: "\uCEE8\uBCA0\uC774\uC5B43 \uD558\uD55C \uC13C\uC11C"
     comment: "\uCEE8\uBCA04\n\uC0C1\uD55C\uC13C\uC11C\n\n"
   needCallback: 0
 --- !u!120 &1654568904
@@ -9933,7 +9933,7 @@ MonoBehaviour:
     isLocked: 1
     label: 
     address: X04
-    description: "\uCEE8\uBCA0\uC774\uC5B42 \uC0C1\uD55C \uC13C\uC11C"
+    description: "\uCEE8\uBCA0\uC774\uC5B43 \uD558\uD55C \uC13C\uC11C"
     comment: "\uCEE8\uBCA02\n\uC0C1\uD55C\uC13C\uC11C\n\n"
   needCallback: 0
 --- !u!120 &1743176516
@@ -10948,7 +10948,7 @@ MonoBehaviour:
     isLocked: 1
     label: 
     address: X10
-    description: "\uCEE8\uBCA0\uC774\uC5B44 \uD558\uD55C \uC13C\uC11C"
+    description: "\uCEE8\uBCA0\uC774\uC5B43 \uC0C1\uD55C \uC13C\uC11C"
     comment: "\uCEE8\uBCA03\n\uC0C1\uD55C\uC13C\uC11C\n\n"
   needCallback: 0
 --- !u!120 &1926490150

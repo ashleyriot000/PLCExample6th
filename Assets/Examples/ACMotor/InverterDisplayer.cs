@@ -4,6 +4,8 @@ using UnityEngine.UI;
 public class InverterDisplayer : MonoBehaviour
 {
     public InverterController controller;
+    public InverterConnector connector;
+
     public Text hzText;
 
     public void OnClickSTF()
@@ -29,7 +31,11 @@ public class InverterDisplayer : MonoBehaviour
 
     private void Start()
     {
-        controller.onChangedHz.AddListener(DisplayCurrentHz);
+        if(controller != null)
+            controller.onChangedHz.AddListener(DisplayCurrentHz);
+
+        if (connector != null)
+            connector.onChangedCurrentHz.AddListener(DisplayCurrentHz);
     }
 
     public void DisplayCurrentHz(float hz)

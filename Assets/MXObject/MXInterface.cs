@@ -194,6 +194,15 @@ public sealed class MXInterface : IDisposable
                 }
             }
         }
-        _communicator?.Close();
+        int? r = _communicator?.Close();
+        if (r == 0)
+        {
+            Debug.Log("성공적으로 연결이 해제되었습니다.");
+        }
+        else
+        {
+            Debug.Log($"연결을 해제하는데 실패했습니다. ({r:x16})");
+        }            
+        _worker = null;
     }
 }

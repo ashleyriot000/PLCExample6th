@@ -27,3 +27,15 @@ MonoBehaviour:
       commandSpeed: 0.3
       dwellTime: 0
       mCode: 300
+    - pattern: 0
+      method: 2
+      positioningAddress: -0.5
+      commandSpeed: 0.3
+      dwellTime: 0
+      mCode: 0
+    - pattern: 0
+      method: 3
+      positioningAddress: -0.5
+      commandSpeed: 0.3
+      dwellTime: 0
+      mCode: 0

@@ -121,12 +121,14 @@ public class ServoConveyorConnector : MonoBehaviour
 
         if(mCodeType == MCodeType.AfterMode && mCodeOnAddress.useDevice && mcode != 0)
         {
+            Debug.Log("MCodeON");
             isOnMCode = true;
             MXRequester.Get.AddSetDeviceRequest(mCodeOnAddress.address, 1);
         }
 
         if(mCodeType == MCodeType.AfterMode && mCodeAddress.useDevice && mcode != 0)
         {
+            Debug.Log("MCode" + mcode);
             MXRequester.Get.AddSetDeviceRequest(mCodeAddress.address, (short)mcode);
         }
 

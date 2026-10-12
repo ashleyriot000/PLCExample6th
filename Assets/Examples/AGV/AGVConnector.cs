@@ -24,6 +24,9 @@ public class AGVConnector : MXObject
 
     void Start()
     {
+        if (controller == null)
+            controller = GetComponent<AGVController>();
+
         MXRequester.Get.AddDeviceAddress(plcHB.address, PLCHeartbeat);
         MXRequester.Get.AddDeviceAddress(moveAddress.address, Move);
         MXRequester.Get.AddDeviceAddress(destinationAddress.address, SetDestination);
@@ -36,6 +39,7 @@ public class AGVConnector : MXObject
 
     private void Move(short obj)
     {
+        Debug.Log($"이동 명령 => {obj}");
         if (obj != 0)
             needMove = true;
         else
@@ -49,17 +53,22 @@ public class AGVConnector : MXObject
 
     private void Update()
     {
+        if (controller == null)
+            return;
+
         if(needMove && destination != 0)
         {
             controller.Go(destination);
             MXRequester.Get.AddSetDeviceRequest(receiveMoveAddress.address, 1);
             MXRequester.Get.AddSetDeviceRequest(moveBusyAddress.address, 1);
+            needMove = false;
+            destination = 0;
         }
 
         if(completedMove && remainTime < Time.time)
         {
             completedMove = false;
-            MXRequester.Get.AddSetDeviceRequest(moveCompletedAddress.address, 0);
+            MXRequester.Get.AddSetDeviceRequest(moveCompletedAddress.address, 0);           
         }
     }
 

@@ -88,7 +88,7 @@ public class AGVController : MonoBehaviour
 
     public void Go(int destinationID)
     {
-        Debug.Log($"Go 명령함 => {destinationID}");
+        Debug.Log($"Go 명령함 => {manager.GetNearestWaypointID(transform.position)} -> {destinationID}");
         manager.GetRoutes(this, manager.GetNearestWaypointID(transform.position), destinationID);
     }
 }

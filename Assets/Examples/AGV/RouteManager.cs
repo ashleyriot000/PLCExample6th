@@ -148,7 +148,13 @@ public class RouteManager : MonoBehaviour
         List<Waypoint> path = FindShortestPath(start, end);
         if(path == null || path.Count == 0)
             return;
-        Debug.Log("경로 탐색 완료");
+        string p = string.Empty;
+        foreach (var waypoint in path)
+        {
+            p += waypoint.id + "->";
+        }
+
+        Debug.Log($"경로 탐색 완료 {p}");
         //컨트롤러에게 최단 경로 가져다 주기.
         controller.SetRoute(path);
     }

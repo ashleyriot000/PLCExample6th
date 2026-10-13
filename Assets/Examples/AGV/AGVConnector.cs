@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class AGVConnector : MXObject
@@ -26,16 +27,31 @@ public class AGVConnector : MXObject
     public DeviceAddress liftBusyAddress = new DeviceAddress("AGV 상하 이동 BUSY 신호");
     public DeviceAddress completedLiftAddress = new DeviceAddress("AGV 상하 이동 완료 신호");
 
+    [Header("그리퍼 관련")]
+    public DeviceAddress getAddress = new DeviceAddress("그리퍼 겟 명령신호");
+    public DeviceAddress putAddress = new DeviceAddress("그리퍼 풋 명령신호");
+    public DeviceAddress pullAddress = new DeviceAddress("그리퍼 풀 명령신호");
+    public DeviceAddress sendAddress = new DeviceAddress("그리퍼 샌드 명령신호");
+
+    public DeviceAddress receivedGripperAddress = new DeviceAddress("그리퍼 기동 완료 신호");
+    public DeviceAddress gripperBusyAddress = new DeviceAddress("그리퍼 BUSY 신호");
+    public DeviceAddress completedGripperAddress = new DeviceAddress("그리퍼 완료 신호");
+
+
     public float feedbackTime = 0.3f;
 
     private bool needMove = false;
     private bool needLift = false;
+    private bool needGripper = false;
     private short destination;
     private short floor;
     private bool completedMove;
     private bool completedLift;
+    private bool completedGripper;
     private float remainTime;
     private float remainTime_Lift;
+    private float remainTime_Gripper;
+    private bool gripperBusy = false;
 
 
     void Start()
@@ -54,6 +70,71 @@ public class AGVConnector : MXObject
         MXRequester.Get.AddDeviceAddress(destinationAddress.address, SetDestination);
         MXRequester.Get.AddDeviceAddress(liftAddress.address, Lift);
         MXRequester.Get.AddDeviceAddress(floorAddress.address, SetFloor);
+
+        MXRequester.Get.AddDeviceAddress(getAddress.address, GetSignal);
+        MXRequester.Get.AddDeviceAddress(putAddress.address, PutSignal);
+        MXRequester.Get.AddDeviceAddress(pullAddress.address, PullSignal);
+        MXRequester.Get.AddDeviceAddress(sendAddress.address, sendSignal);
+    }
+
+    private void sendSignal(short obj)
+    {
+        if (obj != 0)
+        {
+            if (gripperBusy)
+                return;
+            
+            Send();
+        }
+        else
+        {
+            MXRequester.Get.AddSetDeviceRequest(receivedGripperAddress.address, 0);
+        }   
+    }
+
+    private void PullSignal(short obj)
+    {
+        if (obj != 0)
+        {
+            if (gripperBusy)
+                return;
+
+            Pull();
+        }
+        else
+        {
+            MXRequester.Get.AddSetDeviceRequest(receivedGripperAddress.address, 0);
+        }
+    }
+
+    private void PutSignal(short obj)
+    {
+        if (obj != 0)
+        {
+            if (gripperBusy)
+                return;
+
+            Put();
+        }
+        else
+        {
+            MXRequester.Get.AddSetDeviceRequest(receivedGripperAddress.address, 0);
+        }
+    }
+
+    private void GetSignal(short obj)
+    {
+        if (obj != 0)
+        {
+            if (gripperBusy)
+                return;
+
+            Get();
+        }
+        else
+        {
+            MXRequester.Get.AddSetDeviceRequest(receivedGripperAddress.address, 0);
+        }
     }
 
     private void SetFloor(short obj)
@@ -127,6 +208,12 @@ public class AGVConnector : MXObject
             completedLift = false;
             MXRequester.Get.AddSetDeviceRequest(completedLiftAddress.address, 0);
         }
+
+        if(completedGripper && remainTime_Gripper < Time.time)
+        {
+            completedGripper = false;
+            MXRequester.Get.AddSetDeviceRequest(completedGripperAddress.address, 0);
+        }
     }
 
     public void OnComletedMove()
@@ -148,6 +235,9 @@ public class AGVConnector : MXObject
     public void Get()
     {
         anim.SetTrigger("Get");
+        MXRequester.Get.AddSetDeviceRequest(receivedGripperAddress.address, 1);
+        MXRequester.Get.AddSetDeviceRequest(gripperBusyAddress.address, 1);
+        gripperBusy = true;
     }
     public void GetProduct()
     {
@@ -156,7 +246,11 @@ public class AGVConnector : MXObject
 
     public void Put()
     {
+        Debug.Log("Put");
         anim.SetTrigger("Put");
+        MXRequester.Get.AddSetDeviceRequest(receivedGripperAddress.address, 1);
+        MXRequester.Get.AddSetDeviceRequest(gripperBusyAddress.address, 1);
+        gripperBusy = true;
     }
     public void PutProduct()
     {
@@ -166,6 +260,9 @@ public class AGVConnector : MXObject
     public void Pull()
     {
         anim.SetTrigger("Pull");
+        MXRequester.Get.AddSetDeviceRequest(receivedGripperAddress.address, 1);
+        MXRequester.Get.AddSetDeviceRequest(gripperBusyAddress.address, 1);
+        gripperBusy = true;
     }
     public void PullProduct()
     {
@@ -175,9 +272,21 @@ public class AGVConnector : MXObject
     public void Send()
     {
         anim.SetTrigger("Send");
+        MXRequester.Get.AddSetDeviceRequest(receivedGripperAddress.address, 1);
+        MXRequester.Get.AddSetDeviceRequest(gripperBusyAddress.address, 1);
+        gripperBusy = true;
     }
     public void ReleaseProduct()
     {
         gripper.Grab(false);
+    }
+
+    public void OnCompletedGripper()
+    {
+        MXRequester.Get.AddSetDeviceRequest(completedGripperAddress.address, 1);
+        MXRequester.Get.AddSetDeviceRequest(gripperBusyAddress.address, 0);
+        gripperBusy = false;
+        completedGripper = true;
+        remainTime_Gripper = Time.time + feedbackTime;
     }
 }

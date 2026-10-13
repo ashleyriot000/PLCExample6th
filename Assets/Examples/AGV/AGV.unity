@@ -8584,6 +8584,62 @@ MonoBehaviour:
     address: M208
     description: "AGV \uC0C1\uD558 \uC774\uB3D9 \uC644\uB8CC \uC2E0\uD638"
     comment: 
+  getAddress:
+    useDevice: 1
+    useDoubleWord: 0
+    isLocked: 1
+    label: 
+    address: M209
+    description: "\uADF8\uB9AC\uD37C \uAC9F \uBA85\uB839\uC2E0\uD638"
+    comment: 
+  putAddress:
+    useDevice: 1
+    useDoubleWord: 0
+    isLocked: 1
+    label: 
+    address: M210
+    description: "\uADF8\uB9AC\uD37C \uD48B \uBA85\uB839\uC2E0\uD638"
+    comment: 
+  pullAddress:
+    useDevice: 1
+    useDoubleWord: 0
+    isLocked: 1
+    label: 
+    address: M211
+    description: "\uADF8\uB9AC\uD37C \uD480 \uBA85\uB839\uC2E0\uD638"
+    comment: 
+  sendAddress:
+    useDevice: 1
+    useDoubleWord: 0
+    isLocked: 1
+    label: 
+    address: M212
+    description: "\uADF8\uB9AC\uD37C \uC0CC\uB4DC \uBA85\uB839\uC2E0\uD638"
+    comment: 
+  receivedGripperAddress:
+    useDevice: 1
+    useDoubleWord: 0
+    isLocked: 1
+    label: 
+    address: M213
+    description: "\uADF8\uB9AC\uD37C \uAE30\uB3D9 \uC644\uB8CC \uC2E0\uD638"
+    comment: 
+  gripperBusyAddress:
+    useDevice: 1
+    useDoubleWord: 0
+    isLocked: 1
+    label: 
+    address: M214
+    description: "\uADF8\uB9AC\uD37C BUSY \uC2E0\uD638"
+    comment: 
+  completedGripperAddress:
+    useDevice: 1
+    useDoubleWord: 0
+    isLocked: 1
+    label: 
+    address: M215
+    description: "\uADF8\uB9AC\uD37C \uC644\uB8CC \uC2E0\uD638"
+    comment: 
   feedbackTime: 0.3
 --- !u!114 &3128053073520696829
 MonoBehaviour:

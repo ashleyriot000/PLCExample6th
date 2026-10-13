@@ -1,10 +1,11 @@
-using System;
 using UnityEngine;
 
 public class AGVConnector : MXObject
 {
     public AGVController controller;
     public AGVLiftController liftController;
+    public Animator anim;
+    public AGVGripperController gripper;
 
     [Header("이동 관련")]
     public DeviceAddress plcHB = new DeviceAddress("PLC Heartbeat");
@@ -44,6 +45,9 @@ public class AGVConnector : MXObject
 
         if (liftController == null)
             liftController = GetComponent<AGVLiftController>();
+
+        if (anim == null)
+            anim = GetComponent<Animator>();
 
         MXRequester.Get.AddDeviceAddress(plcHB.address, PLCHeartbeat);
         MXRequester.Get.AddDeviceAddress(moveAddress.address, Move);
@@ -139,5 +143,41 @@ public class AGVConnector : MXObject
         remainTime_Lift = Time.time + feedbackTime;
         MXRequester.Get.AddSetDeviceRequest(completedLiftAddress.address, 1);
         MXRequester.Get.AddSetDeviceRequest(liftBusyAddress.address, 0);
+    }
+
+    public void Get()
+    {
+        anim.SetTrigger("Get");
+    }
+    public void GetProduct()
+    {
+        gripper.Grab(true);
+    }
+
+    public void Put()
+    {
+        anim.SetTrigger("Put");
+    }
+    public void PutProduct()
+    {
+        gripper.PutProduct();
+    }
+
+    public void Pull()
+    {
+        anim.SetTrigger("Pull");
+    }
+    public void PullProduct()
+    {
+        gripper.PullProduct();
+    }
+
+    public void Send()
+    {
+        anim.SetTrigger("Send");
+    }
+    public void ReleaseProduct()
+    {
+        gripper.Grab(false);
     }
 }

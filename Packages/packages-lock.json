@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.preliy.flange": {
+      "version": "https://github.com/Preliy/Flange.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "34040b32179a1eaa6655731511bc637b560ca6a8"
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,

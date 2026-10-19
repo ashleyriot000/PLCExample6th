@@ -11,17 +11,9 @@ public class GripperTool : ToolParent
     protected override void OnChangedValue(bool isOn)
     {
         anim.SetBool("IsGrab", isOn);
-        if(isOn)
-        {
-            Grab();
-        }
-        else
-        {
-            Release();
-        }
     }
 
-    private void Grab()
+    public void Grab()
     {
         if(grabbed == null && triggerList.Count > 0)
         {
@@ -31,7 +23,7 @@ public class GripperTool : ToolParent
         }
     }
 
-    private void Release()
+    public void Release()
     {
         if(grabbed != null)
         {
@@ -39,7 +31,6 @@ public class GripperTool : ToolParent
             grabbed.isKinematic = false;
             grabbed = null;
         }
-
     }
 
     private void OnTriggerEnter(Collider other)
@@ -51,7 +42,6 @@ public class GripperTool : ToolParent
             return;
 
         triggerList.Add(other.attachedRigidbody);
-        
     }
 
     private void OnTriggerExit(Collider other)

@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
-using System.Text;
-using System.Text.RegularExpressions;
 using UnityEngine;
 
+/// <summary>Unity 메인 스레드에서 구독을 관리하고, 프레임별 쓰기와 통신 결과를 전달합니다.</summary>
 public class MXRequester : MonoBehaviour
 {
     [Serializable]
@@ -12,277 +10,211 @@ public class MXRequester : MonoBehaviour
     {
         public string address;
         public bool isBitDevice;
-
+        public Action<short> callbacks;
+        private short _value;
+        public bool HasReadValue { get; private set; }
         public short ReadValue
         {
-            get => _readValue;
+            get { return _value; }
             set
             {
-                if (_readValue == value)
-                    return;
-
-                _readValue = value;
-                callbacks?.Invoke(value);
+                if (HasReadValue && _value == value) return;
+                HasReadValue = true;
+                _value = value;
+                Notify(callbacks, value);
             }
         }
-        private short _readValue;
-        public Action<short> callbacks;
-
-        public DeviceSubscriber(string address)
-        {
-            this.address = address;
-            string prefix = Regex.Match(address, @"^[a-zA-Z]+").Value.ToUpper();
-            this.isBitDevice = prefix == "X" || prefix == "Y" || prefix == "M";
-        }
+        public DeviceSubscriber(string address) { this.address = address; isBitDevice = IsBit(address); }
     }
 
-    private static MXRequester _instance = null;
-    public static MXRequester Get => _instance;
-
-    private MXInterface _mxComponent;
-
-    private ConcurrentQueue<MXInterface.SetDeviceRequest> _setCallbackEnqueue = new();
-    private ConcurrentQueue<KeyValuePair<string, short>> _valueChangedQueue = new();
-
-    [Min(30)]
-    [SerializeField] private int _interval = 50;
-    [SerializeField] private int _capacity = 100;
+    // 기존 씬의 Inspector 설정 이름을 유지합니다. interval은 API 호환용입니다.
+    private int _interval = 50;
+    [Min(1)][SerializeField] private int _capacity = 100;
     [SerializeField] private int _stationNumber = 1;
-    [SerializeField] private string _password;
+    [SerializeField] private string _password = null;
     [SerializeField] private bool _useAutoConnect = false;
+    [Min(1)][SerializeField] private int _maxWriteBatchSize = 64;
+    [Min(1)][SerializeField] private int _maxWritesPerCycle = 1024;
+    [Min(1)][SerializeField] private int _maxResultsPerFrame = 128;
 
-    private bool _updated = false;
-    private bool _changed = false;
+    // 디버그가 켜지면 구간 통계를 출력합니다. 주기 0은 작업 회차마다 출력합니다.
+    [SerializeField] private bool _debugCommunication = false;
+    [Min(0)][SerializeField] private int _debugLogIntervalMs = 1000;
 
-    [SerializeField] private List<DeviceSubscriber> _deviceList = new(100);
-    [SerializeField] private List<string> _addressList = new(100);
-    private Dictionary<string, DeviceSubscriber> _deviceDict = new();
+    // 32비트 스캔 번호의 하위 워드 주소. D100 입력 시 D101도 자동으로 읽습니다. 빈 값이면 비활성입니다.
+    [SerializeField] private string _scanCounterAddress = "";
 
-    private struct PendingWrite
-    {
-        public string address;
-        public short value;
-        public Action<bool> callback;
-        public int priority;
-        public int order;
-    }
+    private static MXRequester _current;
+    private MXInterface _link;
+    private readonly Dictionary<string, DeviceSubscriber> _subscribers = new Dictionary<string, DeviceSubscriber>();
+    private List<MXInterface.SetDeviceRequest> _frame = new List<MXInterface.SetDeviceRequest>(64);
+    private readonly List<MXInterface.SetDeviceRequest> _ordered = new List<MXInterface.SetDeviceRequest>(64);
+    private readonly List<(DeviceSubscriber Target, short Value)> _notifications = new List<(DeviceSubscriber, short)>(128);
+    private bool _dirty, _dead, _writesEnabled = true;
 
-    private struct PendingRead
-    {
-        public DeviceSubscriber subscriber;
-        public short value;
-        public int priority;
-        public int order;
-    }
-
-    private List<PendingWrite> _pendingWrites = new List<PendingWrite>(50);
-    private List<PendingRead> _pendingReads = new List<PendingRead>(50);
+    public static MXRequester Get { get { return _current; } }
+    public bool IsConnected { get { return _link != null && _link.IsConnected; } }
+    public bool IsClosed { get { return _link == null || _link.IsClosed; } }
+    public int PendingResetAddressCount { get { return _link == null ? 0 : _link.PendingResetAddressCount; } }
 
     private void Awake()
     {
-        _instance = this;
-        _deviceList = new(_capacity);
-        _addressList = new(_capacity);
-        _deviceDict = new(_capacity);
-
-        _mxComponent = new MXInterface(_interval, _capacity, _stationNumber, _password);
-
+        if (_current != null && _current != this)
+        {
+            _dead = true;
+            Debug.LogError("[MXRequester] 중복 인스턴스는 사용하지 않습니다.");
+            return;
+        }
+        _current = this;
+        _link = new MXInterface(_interval, Math.Max(1, _capacity), _stationNumber, _password,
+            Math.Max(1, _maxWriteBatchSize), Math.Max(1, _maxWritesPerCycle));
+        _link.SetDebugLogging(_debugCommunication, _debugLogIntervalMs);
+        ApplyReading();
+        _link.DeviceValuesChanged += Receive;
         if (_useAutoConnect) Open();
     }
 
-    public void Open() => _mxComponent.Open();
-    public void Close() => _mxComponent.Close();
-    private void OnApplicationQuit() => Close();
-    private void OnDestroy() => _mxComponent?.Dispose();
-
-    // 슬래시(/)를 역슬래시(\)로 자동 변환하여 포맷 통일
-    private string NormalizeAddress(string address)
+    private void OnValidate()
     {
-        if (string.IsNullOrEmpty(address)) 
-            return string.Empty;
+        _link?.SetDebugLogging(_debugCommunication, _debugLogIntervalMs);
+        _dirty = true;
+    }
 
-        return address.ToUpper();
+    public void Open()
+    {
+        if (_dead) return;
+        _link?.Open();
+        _writesEnabled = true;
+    }
+
+    public void Close()
+    {
+        _writesEnabled = false;
+        // 먼저 목록을 분리하고 인터페이스를 닫아, 취소 콜백의 Open/Close 재호출에 대비합니다.
+        var cancelled = _frame;
+        if (cancelled.Count > 0) _frame = new List<MXInterface.SetDeviceRequest>(64);
+        _link?.Close();
+        foreach (var request in cancelled) Notify(request.callback, false);
+    }
+
+    private void OnApplicationQuit() { Close(); }
+
+    private void OnDestroy()
+    {
+        _dead = true;
+        Close();
+        if (_link != null)
+        {
+            _link.DeviceValuesChanged -= Receive;
+            _link.Dispose();
+            _link.UpdateMainThread(int.MaxValue);
+        }
+        if (_current == this) _current = null;
     }
 
     public void AddDeviceAddress(string address, Action<short> action)
     {
-        address = NormalizeAddress(address);
-        if (address.Length < 2) return;
-
-        if (!_deviceDict.TryGetValue(address, out DeviceSubscriber subscriber))
+        address = Normalize(address);
+        if (_dead || !Valid(address)) return;
+        if (!_subscribers.TryGetValue(address, out DeviceSubscriber subscriber))
         {
             subscriber = new DeviceSubscriber(address);
-            _deviceList.Add(subscriber);
-            _addressList.Add(address);
-            _deviceDict[address] = subscriber;
+            _subscribers.Add(address, subscriber);
+            _dirty = true;
         }
-
-        if (action != null)
-        {
-            subscriber.callbacks += action;
-            action.Invoke(subscriber.ReadValue);
-        }
-
-        _deviceList.Sort((x, y) => x.address.CompareTo(y.address));
-        _addressList.Sort((x, y) => x.CompareTo(y));
-        _changed = true;
+        subscriber.callbacks += action;
+        if (subscriber.HasReadValue) Notify(action, subscriber.ReadValue);
     }
 
     public void RemoveDeviceAddress(string address, Action<short> action)
     {
-        address = NormalizeAddress(address);
-        if (!_deviceDict.TryGetValue(address, out DeviceSubscriber subscriber)) return;
-
-        if (action != null) subscriber.callbacks -= action;
-
-        if (subscriber.callbacks == null)
-        {
-            _deviceList.Remove(subscriber);
-            _addressList.Remove(address);
-            _deviceDict.Remove(address);
-        }
-        _changed = true;
+        address = Normalize(address);
+        if (!_subscribers.TryGetValue(address, out DeviceSubscriber subscriber)) return;
+        subscriber.callbacks -= action;
+        if (subscriber.callbacks != null) return;
+        _subscribers.Remove(address);
+        _dirty = true;
     }
 
     public void AddSetDeviceRequest(string deviceAddress, short writeValue, Action<bool> callback = null)
     {
-        deviceAddress = NormalizeAddress(deviceAddress);
-        if (string.IsNullOrEmpty(deviceAddress)) return;
-
-        string prefix = Regex.Match(deviceAddress, @"^[a-zA-Z]+").Value;
-        bool isBit = prefix == "X" || prefix == "Y" || prefix == "M" || prefix == "B" || prefix == "L" || prefix == "F" || prefix == "V";
-
-        _pendingWrites.Add(new PendingWrite()
-        {
-            address = deviceAddress,
-            value = writeValue,
-            callback = callback,
-            priority = isBit ? 1 : 0,
-            order = _pendingWrites.Count
-        });
-
-        _updated = true;
+        deviceAddress = Normalize(deviceAddress);
+        if (_dead || !_writesEnabled || !Valid(deviceAddress)) { Notify(callback, false); return; }
+        _frame.Add(new MXInterface.SetDeviceRequest { deviceAddress = deviceAddress, writeValue = writeValue, callback = callback, queuedAt = System.Diagnostics.Stopwatch.GetTimestamp() });
     }
 
-    public void OnReceivedSetDevice(MXInterface.SetDeviceRequest receive) { _setCallbackEnqueue.Enqueue(receive); _updated = true; }
-    public void OnDeviceValueChanged(string address, short newValue) { _valueChangedQueue.Enqueue(new KeyValuePair<string, short>(address, newValue)); _updated = true; }
+    // 기존 외부 API 호환 경로입니다. 두 함수 모두 메인 스레드에서 호출합니다.
+    public void OnReceivedSetDevice(MXInterface.SetDeviceRequest receive) { Notify(receive.callback, receive.result); }
+    public void OnDeviceValueChanged(string address, short newValue)
+    {
+        if (_subscribers.TryGetValue(Normalize(address), out DeviceSubscriber subscriber)) subscriber.ReadValue = newValue;
+    }
 
     private void Update()
     {
-        if (_changed)
+        if (_dead || _link == null) return;
+        if (_dirty) ApplyReading();
+        _link.UpdateMainThread(Math.Max(1, _maxResultsPerFrame));
+    }
+
+    private void ApplyReading()
+    {
+        _link.SetAutoReadDevice(_subscribers.Keys);
+        try { _link.SetScanCounterAddress(_scanCounterAddress); }
+        catch (ArgumentException error)
         {
-            _mxComponent.SetAutoReadDevice(_addressList);
-            _changed = false;
+            _link.SetScanCounterAddress(null);
+            Debug.LogError("[MXRequester] " + error.Message);
         }
+        _dirty = false;
+    }
 
-        _mxComponent.UpdateMainThread();
+    private void LateUpdate()
+    {
+        if (_dead || _link == null || _frame.Count == 0) return;
+        _ordered.Clear();
+        // 프레임 안에서만 워드 → 비트 순서로 정리합니다. 실제 전송 배치는 워커가 만듭니다.
+        for (int pass = 0; pass < 2; pass++)
+            foreach (var request in _frame)
+                if (IsBit(request.deviceAddress) == (pass == 1)) _ordered.Add(request);
+        _frame.Clear();
+        _link.AddSetDeviceRequests(_ordered);
+        _ordered.Clear();
+    }
 
-        if (_pendingWrites.Count > 0)
+    private void Receive(MXInterface.DeviceValue[] values)
+    {
+        if (_dead || _dirty) return;
+        _notifications.Clear();
+        for (int pass = 0; pass < 2; pass++)
+            foreach (var value in values)
+                if (_subscribers.TryGetValue(value.Address, out DeviceSubscriber target) && target.isBitDevice == (pass == 1))
+                    _notifications.Add((target, value.Value));
+        // 콜백 중 주소를 삭제/재등록해도 이전 결과를 새 구독 객체에 적용하지 않습니다.
+        foreach (var item in _notifications)
         {
-            _pendingWrites.Sort((a, b) =>
-            {
-                int priorityCompare = a.priority.CompareTo(b.priority);
-                if (priorityCompare == 0) return a.order.CompareTo(b.order);
-                return priorityCompare;
-            });
-
-            List<PendingWrite> batchList = new List<PendingWrite>();
-
-            Action FlushBatch = () =>
-            {
-                if (batchList.Count == 0) return;
-                if (batchList.Count == 1)
-                {
-                    _mxComponent.AddSetDeviceRequest(new MXInterface.SetDeviceRequest()
-                    {
-                        deviceAddress = batchList[0].address,
-                        writeValue = batchList[0].value,
-                        callback = batchList[0].callback
-                    });
-                }
-                else
-                {
-                    StringBuilder sb = new StringBuilder();
-                    short[] values = new short[batchList.Count];
-                    Action<bool>[] callbacks = new Action<bool>[batchList.Count];
-
-                    for (int i = 0; i < batchList.Count; i++)
-                    {
-                        if (i > 0) sb.Append("\n");
-                        sb.Append(batchList[i].address);
-                        values[i] = batchList[i].value;
-                        callbacks[i] = batchList[i].callback;
-                    }
-
-                    _mxComponent.AddSetRandomDeviceRequest(new MXInterface.SetRandomDeviceRequest(
-                        sb.ToString(), batchList.Count, values, callbacks
-                    ));
-                }
-                batchList.Clear();
-            };
-
-            foreach (var w in _pendingWrites)
-            {
-                // U 디바이스(버퍼메모리)는 다중 쓰기시 에러가 날 수 있으므로 단건 전송으로 자동 분리
-                if (w.address.Contains("\\G"))
-                {
-                    FlushBatch();
-                    _mxComponent.AddSetDeviceRequest(new MXInterface.SetDeviceRequest()
-                    {
-                        deviceAddress = w.address,
-                        writeValue = w.value,
-                        callback = w.callback
-                    });
-                }
-                else
-                {
-                    batchList.Add(w);
-                }
-            }
-            FlushBatch();
-            _pendingWrites.Clear();
+            if (_dead) break;
+            if (_subscribers.TryGetValue(item.Target.address, out DeviceSubscriber target) && ReferenceEquals(target, item.Target))
+                target.ReadValue = item.Value;
         }
+        _notifications.Clear();
+    }
 
-        if (!_updated) return;
+    private static string Normalize(string address) { return (address ?? "").Trim().ToUpperInvariant(); }
+    private static bool Valid(string address) { return address.Length >= 2 && address.IndexOf('\r') < 0 && address.IndexOf('\n') < 0; }
 
-        // 2. 단건 쓰기 콜백 처리
-        while (_setCallbackEnqueue.TryDequeue(out MXInterface.SetDeviceRequest receive))
-        {
-            receive.callback?.Invoke(receive.result);
-        }
+    private static bool IsBit(string address)
+    {
+        if (string.IsNullOrEmpty(address) || address.Length < 2) return false;
+        char next = char.ToUpperInvariant(address[1]);
+        return "XYMBLFV".IndexOf(char.ToUpperInvariant(address[0])) >= 0 &&
+            (char.IsDigit(next) || (next >= 'A' && next <= 'F'));
+    }
 
-        // 3. 수신 데이터 (Read) 워드/비트 정렬 후 UI 콜백 실행
-        while (_valueChangedQueue.TryDequeue(out KeyValuePair<string, short> kvp))
-        {
-            if (_deviceDict.TryGetValue(kvp.Key, out DeviceSubscriber subscriber))
-            {
-                _pendingReads.Add(new PendingRead()
-                {
-                    subscriber = subscriber,
-                    value = kvp.Value,
-                    priority = subscriber.isBitDevice ? 1 : 0,
-                    order = _pendingReads.Count
-                });
-            }
-        }
-
-        if (_pendingReads.Count > 0)
-        {
-            _pendingReads.Sort((a, b) =>
-            {
-                int priorityCompare = a.priority.CompareTo(b.priority);
-                if (priorityCompare == 0) return a.order.CompareTo(b.order);
-                return priorityCompare;
-            });
-
-            foreach (var read in _pendingReads)
-            {
-                read.subscriber.ReadValue = read.value;
-            }
-
-            _pendingReads.Clear();
-        }
-
-        _updated = false;
+    private static void Notify<T>(Action<T> callbacks, T value)
+    {
+        if (callbacks == null) return;
+        foreach (Action<T> callback in callbacks.GetInvocationList())
+            try { callback(value); } catch (Exception error) { Debug.LogException(error); }
     }
 }

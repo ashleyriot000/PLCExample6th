@@ -53,5 +53,45 @@ public class WeldingProgram : OfflineProgram
 
         //10. 원점으로 복귀
         this.MoveJ(waypoints[0]);
+
+
+        this.MoveJ(waypoints[10]);
+        this.Connect(true);
+        this.Wait(100);
+
+        this.MoveL(waypoints[10]);
+        this.MoveJ(waypoints[16]);
+        this.MoveL(waypoints[12]);
+
+        this.Action(true, 200);
+        this.MoveL(waypoints[16], 200f, 60f, Pattern.Continue);
+        this.MoveL(waypoints[15], 200f, 60f, Pattern.Continue);
+        this.MoveL(waypoints[14]);
+
+        this.MoveL(waypoints[13]);
+        this.Action(false, 150);
+        this.MoveL(waypoints[14]);
+        this.Wait(1000);
+
+        this.MoveL(waypoints[13]);
+        this.Action(true, 200);
+
+        this.MoveL(waypoints[14], 200f, 60f, Pattern.Continue);
+        this.MoveL(waypoints[15], 200f, 60f, Pattern.Continue);
+        this.MoveL(waypoints[16], 200f, 60f, Pattern.Continue);
+        this.MoveL(waypoints[12]);
+        this.Action(false, 150);
+
+        this.MoveL(waypoints[16], 200f, 60f, Pattern.Continue);
+        this.MoveL(waypoints[10], 200f, 60f, Pattern.Continue);
+        this.MoveL(waypoints[11]);
+        this.Connect(false);
+
+        this.MoveJ(waypoints[0]);
+    }
+
+    public void Program2()
+    {
+
     }
 }

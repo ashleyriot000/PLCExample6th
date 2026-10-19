@@ -13831,8 +13831,12 @@ MonoBehaviour:
   _stationNumber: 1
   _password: 
   _useAutoConnect: 1
-  _deviceList: []
-  _addressList: []
+  _maxWriteBatchSize: 64
+  _maxWritesPerCycle: 1024
+  _maxResultsPerFrame: 128
+  _debugCommunication: 1
+  _debugLogIntervalMs: 0
+  _scanCounterAddress: D5000
 --- !u!4 &1516072673
 Transform:
   m_ObjectHideFlags: 0

@@ -18,32 +18,32 @@ MonoBehaviour:
     _a: 0
     _d: 0
     _theta: 0
-  - _name: Joint_1
+  - _name: SAxis
     _alpha: -1.5707964
     _a: 0.145
     _d: 0.54
     _theta: 0
-  - _name: Joint_2
+  - _name: LAxis
     _alpha: 0
     _a: 0.87
     _d: 0
     _theta: -1.5707964
-  - _name: Joint_3
+  - _name: UAxis
     _alpha: -1.5707964
     _a: 0.21
     _d: 0
     _theta: 0
-  - _name: Joint_4
+  - _name: RAxis
     _alpha: -1.5707964
     _a: 0
     _d: 1.025
     _theta: 0
-  - _name: Joint_5
+  - _name: BAxis
     _alpha: 1.5707964
     _a: 0
     _d: 0
     _theta: 0
-  - _name: Joint_6
+  - _name: TAxis
     _alpha: 0
     _a: 0
     _d: 0.175
@@ -54,44 +54,44 @@ MonoBehaviour:
     _d: 0
     _theta: 3.1415927
   _joints:
-  - _name: Joint_1
+  - _name: SAxis
     _type: 0
-    _limits: {x: -160, y: 160}
+    _limits: {x: -180, y: 180}
     _offset: 0
     _factor: 1
     _speedMax: 105
     _accMax: 1000
-  - _name: Joint_2
+  - _name: LAxis
     _type: 0
-    _limits: {x: -60, y: 76}
+    _limits: {x: -90, y: 135}
     _offset: 0
     _factor: 1
     _speedMax: 90
     _accMax: 1000
-  - _name: Joint_3
+  - _name: UAxis
     _type: 0
-    _limits: {x: -90, y: 75}
+    _limits: {x: -80, y: 206}
     _offset: 0
     _factor: 1
     _speedMax: 100
     _accMax: 1000
-  - _name: Joint_4
+  - _name: RAxis
     _type: 0
-    _limits: {x: -210, y: 210}
+    _limits: {x: -360, y: 360}
     _offset: 0
     _factor: 1
     _speedMax: 120
     _accMax: 1000
-  - _name: Joint_5
+  - _name: BAxis
     _type: 0
     _limits: {x: -125, y: 125}
     _offset: 0
     _factor: -1
     _speedMax: 120
     _accMax: 1000
-  - _name: Joint_6
+  - _name: TAxis
     _type: 0
-    _limits: {x: -210, y: 210}
+    _limits: {x: -360, y: 360}
     _offset: 0
     _factor: 1
     _speedMax: 200

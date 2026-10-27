@@ -121,7 +121,7 @@ namespace Preliy.Flange
 
 
             // 2. 순기구학(FK) 연산 수행
-            Matrix4x4 lastPose;
+            Matrix4x4 lastPose = _controller.transform.GetMatrix();
             if (currentAttachedTool != null)
             {
                 Transform tcp = currentAttachedTool.Point;
@@ -129,9 +129,9 @@ namespace Preliy.Flange
             }
             else
             {
-                lastPose = _controller.MechanicalGroup.ComputeForward();
+                 lastPose *= _controller.MechanicalGroup.ComputeForward();
                 // 3. 스케줄러(브러시)의 게임 오브젝트를 해당 위치로 순간이동시킵니다.
-                transform.SetMatrix(lastPose);
+                 transform.SetLocalMatrix(lastPose);
             }
         }
 
